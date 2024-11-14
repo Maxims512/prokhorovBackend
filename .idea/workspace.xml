@@ -4,26 +4,34 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f20c349c-f06d-4a99-bd6c-c75911c0185e" name="Changes" comment="Создана модель данных.&#10;Создано подключение к бд. Разработаны функции для доступу к данным бд. Создано апи для получения данных с сервера.">
-      <change afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+    <list default="true" id="f20c349c-f06d-4a99-bd6c-c75911c0185e" name="Changes" comment="Добавлены модели для таблиц бд">
       <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/pythonProject.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/pythonProject.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/project/core/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/core/config.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/airline_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/airport_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/city_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/crew_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/discount_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/flight_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/plane_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/route_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/staff_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/ticket_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/api/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/api/routes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/customer_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/customer_repo.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -37,15 +45,15 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "ASKED_MARK_IGNORED_FILES_AS_EXCLUDED": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/ivan8/Desktop/prokhorovBackend/pythonProject"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ASKED_MARK_IGNORED_FILES_AS_EXCLUDED&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ivan8/Desktop/prokhorovBackend/pythonProject&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\ivan8\Desktop\prokhorovBackend\pythonProject" />
@@ -93,7 +101,39 @@
       <option name="project" value="LOCAL" />
       <updated>1730832373208</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Создана модель данных.&#10;Создано подключение к бд. Разработаны функции для доступу к данным бд. Создано апи для получения данных с сервера.">
+      <option name="closed" value="true" />
+      <created>1731413542814</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1731413542814</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Создана первая миграция">
+      <option name="closed" value="true" />
+      <created>1731413571272</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1731413571272</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Добавлены схемы для pydantic">
+      <option name="closed" value="true" />
+      <created>1731417518213</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1731417518213</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Добавлены модели для таблиц бд">
+      <option name="closed" value="true" />
+      <created>1731422756771</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1731422756771</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -102,10 +142,24 @@
     <option featureType="com.intellij.fileTypeFactory" implementationName=".env" />
     <option featureType="com.intellij.fileTypeFactory" implementationName="*.ini" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="init commit" />
     <MESSAGE value="добавлены необходимые зависимости в окружение" />
     <MESSAGE value="Создана модель данных.&#10;Создано подключение к бд. Разработаны функции для доступу к данным бд. Создано апи для получения данных с сервера." />
-    <option name="LAST_COMMIT_MESSAGE" value="Создана модель данных.&#10;Создано подключение к бд. Разработаны функции для доступу к данным бд. Создано апи для получения данных с сервера." />
+    <MESSAGE value="Создана первая миграция" />
+    <MESSAGE value="Добавлены схемы для pydantic" />
+    <MESSAGE value="Добавлены модели для таблиц бд" />
+    <option name="LAST_COMMIT_MESSAGE" value="Добавлены модели для таблиц бд" />
   </component>
 </project>

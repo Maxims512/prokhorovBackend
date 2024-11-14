@@ -3,7 +3,7 @@ from sqlalchemy import ForeignKey, Integer, String, Float, DateTime, Time
 from src.project.infrastructure.postgres.database import Base
 
 class City(Base):
-    tablename = "cities"
+    tablename = "city"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(nullable=False)
@@ -20,7 +20,7 @@ class AircraftModel(Base):
     capacity: Mapped[int] = mapped_column(nullable=False)
     max_range: Mapped[int] = mapped_column(nullable=False)
 
-    planes = relationship("Plane", back_populates="aircraft_model")
+    plane = relationship("Plane", back_populates="aircraft_model")
 
 
 
@@ -31,13 +31,13 @@ class Airline(Base):
     title: Mapped[str] = mapped_column(nullable=False)
     rating: Mapped[float] = mapped_column(nullable=False)
 
-    planes = relationship("Plane", back_populates="airline")
+    plane = relationship("Plane", back_populates="airline")
     staff = relationship("Staff", back_populates="airline")
     flights = relationship("Flight", back_populates="airline")
 
 
 class Customer(Base):
-    tablename = "Customers"
+    tablename = "Customer"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     first_name: Mapped[str] = mapped_column(nullable=False)
@@ -57,8 +57,8 @@ class Plane(Base):
     year_of_release: Mapped[int] = mapped_column(nullable=False)
     id_aircraft_model: Mapped[int] = mapped_column(ForeignKey("AircraftModel.id"), nullable=False)
 
-    airline = relationship("Airline", back_populates="planes")
-    aircraft_model = relationship("AircraftModel", back_populates="planes")
+    airline = relationship("Airline", back_populates="plane")
+    aircraft_model = relationship("AircraftModel", back_populates="plane")
     flights = relationship("Flight", back_populates="plane")
 
 
@@ -66,7 +66,7 @@ class Discount(Base):
     tablename = "Discount"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    id_customer: Mapped[int] = mapped_column(ForeignKey("Customers.id"), nullable=False)
+    id_customer: Mapped[int] = mapped_column(ForeignKey("customer.id"), nullable=False)
     discount_percent: Mapped[int] = mapped_column(nullable=False)
 
     customer = relationship("Customer", back_populates="discounts")
@@ -76,7 +76,7 @@ class Airport(Base):
     tablename = "Airport"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    id_city: Mapped[int] = mapped_column(ForeignKey("cities.id"), nullable=False)
+    id_city: Mapped[int] = mapped_column(ForeignKey("city.id"), nullable=False)
     airport_code: Mapped[str] = mapped_column(nullable=False)
 
     city = relationship("City", back_populates="airports")
@@ -148,7 +148,7 @@ class Crew(Base):
 
 
 class Route(Base):
-    tablename = "Routes"
+    tablename = "Route"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     id_departure_airport: Mapped[int] = mapped_column(ForeignKey("Airport.id"), nullable=False)
@@ -173,7 +173,7 @@ class Flight(Base):
     tablename = "Flights"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    id_route: Mapped[int] = mapped_column(ForeignKey("Routes.id"), nullable=False)
+    id_route: Mapped[int] = mapped_column(ForeignKey("route.id"), nullable=False)
     id_plane: Mapped[int] = mapped_column(ForeignKey("Plane.id"), nullable=False)
     id_crew: Mapped[int] = mapped_column(ForeignKey("Crew.id"), nullable=False)
     id_airline: Mapped[int] = mapped_column(ForeignKey("Airline.id"), nullable=False)
@@ -191,7 +191,7 @@ class Ticket(Base):
     tablename = "Tickets"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    id_customer: Mapped[int] = mapped_column(ForeignKey("Customers.id"), nullable=False)
+    id_customer: Mapped[int] = mapped_column(ForeignKey("customer.id"), nullable=False)
     date_of_purchase: Mapped[DateTime] = mapped_column(nullable=False)
     price: Mapped[float] = mapped_column(nullable=False)
     id_flight: Mapped[int] = mapped_column(ForeignKey("Flights.id"), nullable=False)
