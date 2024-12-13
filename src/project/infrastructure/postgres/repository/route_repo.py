@@ -1,91 +1,100 @@
-
 from typing import Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import select, insert, update, delete, true
+from sqlalchemy.exc import InterfaceError
 
-from project.schemas.route import RouteSchema
+from project.schemas.route import RouteSchema, RouteCreateUpdateSchema
 from project.infrastructure.postgres.models import Route
 
-from project.core.config import settings
+from project.core.exceptions import RouteNotFound
 
 
 class RouteRepository:
     _collection: Type[Route] = Route
 
-    async def check_connection(self, session: AsyncSession) -> bool:
-        query = "SELECT 1;"
-        result = await session.scalar(text(query))
-        return True if result else False
+    async def check_connection(
+            self,
+            session: AsyncSession,
+    ) -> bool:
+        query = select(true())
 
-    async def create_route(
-        self,
-        session: AsyncSession,
-        route: RouteSchema,
-    ) -> RouteSchema:
-        columns = ", ".join(route.model_dump().keys())
-        values_placeholders = ", ".join(f":{key}" for key in route.model_dump().keys())
-        query = f"""
-            INSERT INTO {settings.POSTGRES_SCHEMA}.routes ({columns})
-            VALUES ({values_placeholders})
-            RETURNING *;
-        """
-
-        result = await session.execute(text(query), route.model_dump())
-        await session.commit()
-
-        new_route = result.mappings().first()
-        return RouteSchema.model_validate(obj=new_route)
+        try:
+            return await session.scalar(query)
+        except (Exception, InterfaceError):
+            return False
 
     async def get_route_by_id(
-        self,
-        session: AsyncSession,
-        id: int,
+            self,
+            session: AsyncSession,
+            route_id: int,
     ) -> RouteSchema:
-        query = f"""
-            SELECT * FROM {settings.POSTGRES_SCHEMA}.routes
-            WHERE id = :id;
-        """
+        query = (
+            select(self._collection)
+            .where(self._collection.route_id == route_id)
+        )
 
-        result = await session.execute(text(query), {'id': id})
-        route = result.mappings().first()
+        route = await session.scalar(query)
 
-        return RouteSchema.model_validate(obj=route) if route else None
+        if not route:
+            raise RouteNotFound(_id=route_id)
+
+        return RouteSchema.model_validate(obj=route)
+
+    async def get_all_routes(
+            self,
+            session: AsyncSession,
+    ) -> list[RouteSchema]:
+        query = select(self._collection)
+
+        cities = await session.scalars(query)
+
+        return [RouteSchema.model_validate(obj=route) for route in cities.all()]
+
+    async def create_route(
+            self,
+            session: AsyncSession,
+            route: RouteCreateUpdateSchema,
+    ) -> RouteSchema:
+        query = (
+            insert(self._collection)
+            .values(route.model_dump())
+            .returning(self._collection)
+        )
+
+        created_route = await session.scalar(query)
+        await session.flush()
+
+        return RouteSchema.model_validate(obj=created_route)
 
     async def update_route(
-        self,
-        session: AsyncSession,
-        id: int,
-        route: RouteSchema,
+            self,
+            session: AsyncSession,
+            route_id: int,
+            route: RouteCreateUpdateSchema,
     ) -> RouteSchema:
-        set_clause = ", ".join(f"{key} = :{key}" for key in route.model_dump().keys())
-        query = f"""
-            UPDATE {settings.POSTGRES_SCHEMA}.routes
-            SET {set_clause}
-            WHERE id = :id
-            RETURNING *;
-        """
+        query = (
+            update(self._collection)
+            .where(self._collection.route_id == route_id)
+            .values(route.model_dump())
+            .returning(self._collection)
+        )
 
-        params = route.model_dump()
-        params['id'] = id
+        updated_route = await session.scalar(query)
 
-        result = await session.execute(text(query), params)
-        await session.commit()
+        if not updated_route:
+            raise RouteNotFound(_id=route_id)
 
-        updated_route = result.mappings().first()
-        return RouteSchema.model_validate(obj=updated_route) if updated_route else None
+        return RouteSchema.model_validate(obj=updated_route)
 
     async def delete_route(
-        self,
-        session: AsyncSession,
-        id: int,
-    ) -> dict:
-        query = f"""
-            DELETE FROM {settings.POSTGRES_SCHEMA}.routes
-            WHERE id = :id;
-        """
+            self,
+            session: AsyncSession,
+            route_id: int
+    ) -> None:
+        query = delete(self._collection).where(self._collection.route_id == route_id)
 
-        await session.execute(text(query), {'id': id})
-        await session.commit()
+        result = await session.execute(query)
 
-        return {'status': 'success', 'message': 'Route deleted successfully'}
+        if not result.rowcount:
+            raise RouteNotFound(_id=route_id)

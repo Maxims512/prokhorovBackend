@@ -1,103 +1,100 @@
-
 from typing import Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import select, insert, update, delete, true
+from sqlalchemy.exc import InterfaceError
 
-from project.schemas.airline import AirlineSchema
+from project.schemas.airline import AirlineSchema, AirlineCreateUpdateSchema
 from project.infrastructure.postgres.models import Airline
 
-from project.core.config import settings
+from project.core.exceptions import AirlineNotFound
 
 
 class AirlineRepository:
     _collection: Type[Airline] = Airline
 
-    async def check_connection(self, session: AsyncSession) -> bool:
-        query = "SELECT 1;"
-        result = await session.scalar(text(query))
-        return True if result else False
-    async def get_all_airlines(
-        self,
-        session: AsyncSession,
-    ) -> list[AirlineSchema]:
-        query = f"""
-            SELECT * FROM {settings.POSTGRES_SCHEMA}.airlines;
-        """
+    async def check_connection(
+            self,
+            session: AsyncSession,
+    ) -> bool:
+        query = select(true())
 
-        result = await session.execute(text(query))
-        airlines = result.mappings().all()
-
-        return [AirlineSchema.model_validate(obj=airline) for airline in airlines]
+        try:
+            return await session.scalar(query)
+        except (Exception, InterfaceError):
+            return False
 
     async def get_airline_by_id(
-        self,
-        session: AsyncSession,
-        id: int,
+            self,
+            session: AsyncSession,
+            airline_id: int,
     ) -> AirlineSchema:
-        query = f"""
-            SELECT * FROM {settings.POSTGRES_SCHEMA}.airlines
-            WHERE id = :id;
-        """
+        query = (
+            select(self._collection)
+            .where(self._collection.airline_id == airline_id)
+        )
 
-        result = await session.execute(text(query), {'id': id})
-        airline = result.mappings().first()
+        airline = await session.scalar(query)
 
-        return AirlineSchema.model_validate(obj=airline) if airline else None
+        if not airline:
+            raise AirlineNotFound(_id=airline_id)
 
-    async def insert_airline(
-        self,
-        session: AsyncSession,
-        airline: AirlineSchema,
+        return AirlineSchema.model_validate(obj=airline)
+
+    async def get_all_airlines(
+            self,
+            session: AsyncSession,
+    ) -> list[AirlineSchema]:
+        query = select(self._collection)
+
+        airlines = await session.scalars(query)
+
+        return [AirlineSchema.model_validate(obj=airline) for airline in airlines.all()]
+
+    async def create_airline(
+            self,
+            session: AsyncSession,
+            airline: AirlineCreateUpdateSchema,
     ) -> AirlineSchema:
-        columns = ", ".join(airline.model_dump().keys())
-        values_placeholders = ", ".join(f":{key}" for key in airline.model_dump().keys())
-        query = f"""
-            INSERT INTO {settings.POSTGRES_SCHEMA}.airlines ({columns})
-            VALUES ({values_placeholders})
-            RETURNING *;
-        """
+        query = (
+            insert(self._collection)
+            .values(airline.model_dump())
+            .returning(self._collection)
+        )
 
-        result = await session.execute(text(query), airline.model_dump())
-        await session.commit()
+        created_airline = await session.scalar(query)
+        await session.flush()
 
-        new_airline = result.mappings().first()
-        return AirlineSchema.model_validate(obj=new_airline)
+        return AirlineSchema.model_validate(obj=created_airline)
 
     async def update_airline(
-        self,
-        session: AsyncSession,
-        id: int,
-        airline: AirlineSchema,
+            self,
+            session: AsyncSession,
+            airline_id: int,
+            airline: AirlineCreateUpdateSchema,
     ) -> AirlineSchema:
-        set_clause = ", ".join(f"{key} = :{key}" for key in airline.model_dump().keys())
-        query = f"""
-            UPDATE {settings.POSTGRES_SCHEMA}.airlines
-            SET {set_clause}
-            WHERE id = :id
-            RETURNING *;
-        """
+        query = (
+            update(self._collection)
+            .where(self._collection.airline_id == airline_id)
+            .values(airline.model_dump())
+            .returning(self._collection)
+        )
 
-        params = airline.model_dump()
-        params['id'] = id
+        updated_airline = await session.scalar(query)
 
-        result = await session.execute(text(query), params)
-        await session.commit()
+        if not updated_airline:
+            raise AirlineNotFound(_id=airline_id)
 
-        updated_airline = result.mappings().first()
-        return AirlineSchema.model_validate(obj=updated_airline) if updated_airline else None
+        return AirlineSchema.model_validate(obj=updated_airline)
 
     async def delete_airline(
-        self,
-        session: AsyncSession,
-        id: int,
-    ) -> dict:
-        query = f"""
-            DELETE FROM {settings.POSTGRES_SCHEMA}.airlines
-            WHERE id = :id;
-        """
+            self,
+            session: AsyncSession,
+            airline_id: int
+    ) -> None:
+        query = delete(self._collection).where(self._collection.airline_id == airline_id)
 
-        await session.execute(text(query), {'id': id})
-        await session.commit()
+        result = await session.execute(query)
 
-        return {'status': 'success', 'message': 'Airline deleted successfully'}
+        if not result.rowcount:
+            raise AirlineNotFound(_id=airline_id)

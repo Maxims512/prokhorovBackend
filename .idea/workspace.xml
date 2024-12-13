@@ -4,22 +4,60 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f20c349c-f06d-4a99-bd6c-c75911c0185e" name="Changes" comment="Добавлены модели для таблиц бд">
+    <list default="true" id="f20c349c-f06d-4a99-bd6c-c75911c0185e" name="Changes" comment="Добавлены репозитории для всех таблици и доработаны модели">
       <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/airline_repo.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/airport_repo.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/city_repo.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/crew_repo.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/discount_repo.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/flight_repo.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/plane_repo.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/route_repo.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/staff_repo.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/ticket_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/api/aircraftModel_routes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/api/airline_routes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/api/airport_routes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/api/city_routes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/api/crew_routes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/api/customer_routes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/api/depends.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/api/discount_routes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/api/flight_routes.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/api/healthcheck.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/core/exceptions.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/aircraftModel_repo.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/resource/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/resource/auth.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/schemas/auth.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/schemas/healthcheck.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/project/schemas/heathcheck.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/project/api/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/api/routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/alembic.ini" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migration/README" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migration/env.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migration/script.py.mako" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/migration/versions/459a2acd2cd0_initial_revision.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/poetry.lock" beforeDir="false" afterPath="$PROJECT_DIR$/poetry.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/api/routes.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/airline_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/airline_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/airport_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/airport_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/city_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/city_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/crew_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/crew_repo.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/customer_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/customer_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/discount_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/discount_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/flight_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/flight_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/plane_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/plane_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/route_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/route_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/staff_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/staff_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/ticket_repo.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/infrastructure/postgres/repository/ticket_repo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/aircraftModel.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/aircraftModel.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/airline.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/airline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/airport.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/airport.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/city.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/city.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/crew.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/crew.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/customer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/customer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/discount.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/discount.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/flight.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/flight.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/plane.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/plane.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/route.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/route.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/staff.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/staff.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/project/schemas/ticket.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/project/schemas/ticket.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,6 +74,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 3
 }</component>
@@ -51,7 +92,8 @@
     &quot;ASKED_MARK_IGNORED_FILES_AS_EXCLUDED&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/ivan8/Desktop/prokhorovBackend/pythonProject&quot;
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ivan8/Desktop/primer/fastapi_docker_postgres_example&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settingsdialog.IDE.editor.colors&quot;
   }
 }</component>
   <component name="RecentsManager">
@@ -133,7 +175,15 @@
       <option name="project" value="LOCAL" />
       <updated>1731422756771</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Добавлены репозитории для всех таблици и доработаны модели">
+      <option name="closed" value="true" />
+      <created>1731605157328</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1731605157328</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -160,6 +210,7 @@
     <MESSAGE value="Создана первая миграция" />
     <MESSAGE value="Добавлены схемы для pydantic" />
     <MESSAGE value="Добавлены модели для таблиц бд" />
-    <option name="LAST_COMMIT_MESSAGE" value="Добавлены модели для таблиц бд" />
+    <MESSAGE value="Добавлены репозитории для всех таблици и доработаны модели" />
+    <option name="LAST_COMMIT_MESSAGE" value="Добавлены репозитории для всех таблици и доработаны модели" />
   </component>
 </project>

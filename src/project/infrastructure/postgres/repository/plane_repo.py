@@ -1,92 +1,100 @@
-
 from typing import Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import select, insert, update, delete, true
+from sqlalchemy.exc import InterfaceError
 
-from project.schemas.plane import PlaneSchema
+from project.schemas.plane import PlaneSchema, PlaneCreateUpdateSchema
 from project.infrastructure.postgres.models import Plane
 
-from project.core.config import settings
+from project.core.exceptions import PlaneNotFound
 
 
 class PlaneRepository:
     _collection: Type[Plane] = Plane
 
-    async def check_connection(self, session: AsyncSession) -> bool:
-        query = "SELECT 1;"
-        result = await session.scalar(text(query))
-        return True if result else False
+    async def check_connection(
+            self,
+            session: AsyncSession,
+    ) -> bool:
+        query = select(true())
 
-    async def create_plane(
-        self,
-        session: AsyncSession,
-        plane: PlaneSchema,
-    ) -> PlaneSchema:
-        columns = ", ".join(plane.model_dump().keys())
-        values_placeholders = ", ".join(f":{key}" for key in plane.model_dump().keys())
-        query = f"""
-            INSERT INTO {settings.POSTGRES_SCHEMA}.planes ({columns})
-            VALUES ({values_placeholders})
-            RETURNING *;
-        """
-
-        result = await session.execute(text(query), plane.model_dump())
-        await session.commit()
-
-        new_plane = result.mappings().first()
-        return PlaneSchema.model_validate(obj=new_plane)
+        try:
+            return await session.scalar(query)
+        except (Exception, InterfaceError):
+            return False
 
     async def get_plane_by_id(
-        self,
-        session: AsyncSession,
-        id: int,
+            self,
+            session: AsyncSession,
+            plane_id: int,
     ) -> PlaneSchema:
-        query = f"""
-            SELECT * FROM {settings.POSTGRES_SCHEMA}.planes
-            WHERE id = :id;
-        """
+        query = (
+            select(self._collection)
+            .where(self._collection.plane_id == plane_id)
+        )
 
-        result = await session.execute(text(query), {'id': id})
-        plane = result.mappings().first()
+        plane = await session.scalar(query)
 
-        return PlaneSchema.model_validate(obj=plane) if plane else None
+        if not plane:
+            raise PlaneNotFound(_id=plane_id)
+
+        return PlaneSchema.model_validate(obj=plane)
+
+    async def get_all_planes(
+            self,
+            session: AsyncSession,
+    ) -> list[PlaneSchema]:
+        query = select(self._collection)
+
+        cities = await session.scalars(query)
+
+        return [PlaneSchema.model_validate(obj=plane) for plane in cities.all()]
+
+    async def create_plane(
+            self,
+            session: AsyncSession,
+            plane: PlaneCreateUpdateSchema,
+    ) -> PlaneSchema:
+        query = (
+            insert(self._collection)
+            .values(plane.model_dump())
+            .returning(self._collection)
+        )
+
+        created_plane = await session.scalar(query)
+        await session.flush()
+
+        return PlaneSchema.model_validate(obj=created_plane)
 
     async def update_plane(
-        self,
-        session: AsyncSession,
-        id: int,
-        plane: PlaneSchema,
+            self,
+            session: AsyncSession,
+            plane_id: int,
+            plane: PlaneCreateUpdateSchema,
     ) -> PlaneSchema:
-        set_clause = ", ".join(f"{key} = :{key}" for key in plane.model_dump().keys())
-        query = f"""
-            UPDATE {settings.POSTGRES_SCHEMA}.planes
-            SET {set_clause}
-            WHERE id = :id
-            RETURNING *;
-        """
+        query = (
+            update(self._collection)
+            .where(self._collection.plane_id == plane_id)
+            .values(plane.model_dump())
+            .returning(self._collection)
+        )
 
-        params = plane.model_dump()
-        params['id'] = id
+        updated_plane = await session.scalar(query)
 
-        result = await session.execute(text(query), params)
-        await session.commit()
+        if not updated_plane:
+            raise PlaneNotFound(_id=plane_id)
 
-        updated_plane = result.mappings().first()
-        return PlaneSchema.model_validate(obj=updated_plane) if updated_plane else None
+        return PlaneSchema.model_validate(obj=updated_plane)
 
     async def delete_plane(
-        self,
-        session: AsyncSession,
-        id: int,
-    ) -> dict:
-        query = f"""
-            DELETE FROM {settings.POSTGRES_SCHEMA}.planes
-            WHERE id = :id;
-        """
+            self,
+            session: AsyncSession,
+            plane_id: int
+    ) -> None:
+        query = delete(self._collection).where(self._collection.plane_id == plane_id)
 
-        await session.execute(text(query), {'id': id})
-        await session.commit()
+        result = await session.execute(query)
 
-        return {'status': 'success', 'message': 'Plane deleted successfully'}
-
+        if not result.rowcount:
+            raise PlaneNotFound(_id=plane_id)

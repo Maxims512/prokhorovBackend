@@ -1,8 +1,12 @@
 from pydantic import BaseModel, ConfigDict
 
-class AirportSchema(BaseModel):
+
+class AirportCreateUpdateSchema(BaseModel):
+    city_id: int
+    airport_code: str
+
+
+class AirportSchema(AirportCreateUpdateSchema):
     model_config = ConfigDict(from_attributes=True)
 
     airport_id: int
-    city_id: int
-    airport_code: str

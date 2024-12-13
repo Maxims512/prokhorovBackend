@@ -1,104 +1,100 @@
-
 from typing import Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import select, insert, update, delete, true
+from sqlalchemy.exc import InterfaceError
 
-from project.schemas.city import CitySchema
+from project.schemas.city import CitySchema, CityCreateUpdateSchema
 from project.infrastructure.postgres.models import City
 
-from project.core.config import settings
+from project.core.exceptions import CityNotFound
 
 
 class CityRepository:
     _collection: Type[City] = City
 
-    async def check_connection(self, session: AsyncSession) -> bool:
-        query = "SELECT 1;"
-        result = await session.scalar(text(query))
-        return True if result else False
+    async def check_connection(
+            self,
+            session: AsyncSession,
+    ) -> bool:
+        query = select(true())
 
-    async def get_all_cities(
-        self,
-        session: AsyncSession,
-    ) -> list[CitySchema]:
-        query = f"""
-            SELECT * FROM {settings.POSTGRES_SCHEMA}.cities;
-        """
-
-        result = await session.execute(text(query))
-        cities = result.mappings().all()
-
-        return [CitySchema.model_validate(obj=city) for city in cities]
+        try:
+            return await session.scalar(query)
+        except (Exception, InterfaceError):
+            return False
 
     async def get_city_by_id(
-        self,
-        session: AsyncSession,
-        id: int,
+            self,
+            session: AsyncSession,
+            city_id: int,
     ) -> CitySchema:
-        query = f"""
-            SELECT * FROM {settings.POSTGRES_SCHEMA}.cities
-            WHERE id = :id;
-        """
+        query = (
+            select(self._collection)
+            .where(self._collection.city_id == city_id)
+        )
 
-        result = await session.execute(text(query), {'id': id})
-        city = result.mappings().first()
+        city = await session.scalar(query)
 
-        return CitySchema.model_validate(obj=city) if city else None
+        if not city:
+            raise CityNotFound(_id=city_id)
 
-    async def insert_city(
-        self,
-        session: AsyncSession,
-        city: CitySchema,
+        return CitySchema.model_validate(obj=city)
+
+    async def get_all_cities(
+            self,
+            session: AsyncSession,
+    ) -> list[CitySchema]:
+        query = select(self._collection)
+
+        cities = await session.scalars(query)
+
+        return [CitySchema.model_validate(obj=city) for city in cities.all()]
+
+    async def create_city(
+            self,
+            session: AsyncSession,
+            city: CityCreateUpdateSchema,
     ) -> CitySchema:
-        columns = ", ".join(city.model_dump().keys())
-        values_placeholders = ", ".join(f":{key}" for key in city.model_dump().keys())
-        query = f"""
-            INSERT INTO {settings.POSTGRES_SCHEMA}.cities ({columns})
-            VALUES ({values_placeholders})
-            RETURNING *;
-        """
+        query = (
+            insert(self._collection)
+            .values(city.model_dump())
+            .returning(self._collection)
+        )
 
-        result = await session.execute(text(query), city.model_dump())
-        await session.commit()
+        created_city = await session.scalar(query)
+        await session.flush()
 
-        new_city = result.mappings().first()
-        return CitySchema.model_validate(obj=new_city)
+        return CitySchema.model_validate(obj=created_city)
 
     async def update_city(
-        self,
-        session: AsyncSession,
-        id: int,
-        city: CitySchema,
+            self,
+            session: AsyncSession,
+            city_id: int,
+            city: CityCreateUpdateSchema,
     ) -> CitySchema:
-        set_clause = ", ".join(f"{key} = :{key}" for key in city.model_dump().keys())
-        query = f"""
-            UPDATE {settings.POSTGRES_SCHEMA}.cities
-            SET {set_clause}
-            WHERE id = :id
-            RETURNING *;
-        """
+        query = (
+            update(self._collection)
+            .where(self._collection.city_id == city_id)
+            .values(city.model_dump())
+            .returning(self._collection)
+        )
 
-        params = city.model_dump()
-        params['id'] = id
+        updated_city = await session.scalar(query)
 
-        result = await session.execute(text(query), params)
-        await session.commit()
+        if not updated_city:
+            raise CityNotFound(_id=city_id)
 
-        updated_city = result.mappings().first()
-        return CitySchema.model_validate(obj=updated_city) if updated_city else None
+        return CitySchema.model_validate(obj=updated_city)
 
     async def delete_city(
-        self,
-        session: AsyncSession,
-        id: int,
-    ) -> dict:
-        query = f"""
-            DELETE FROM {settings.POSTGRES_SCHEMA}.cities
-            WHERE id = :id;
-        """
+            self,
+            session: AsyncSession,
+            city_id: int
+    ) -> None:
+        query = delete(self._collection).where(self._collection.city_id == city_id)
 
-        await session.execute(text(query), {'id': id})
-        await session.commit()
+        result = await session.execute(query)
 
-        return {'status': 'success', 'message': 'City deleted successfully'}
+        if not result.rowcount:
+            raise CityNotFound(_id=city_id)

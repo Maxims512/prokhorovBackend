@@ -1,91 +1,100 @@
-
 from typing import Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import select, insert, update, delete, true
+from sqlalchemy.exc import InterfaceError
 
-from project.schemas.airport import AirportSchema
+from project.schemas.airport import AirportSchema, AirportCreateUpdateSchema
 from project.infrastructure.postgres.models import Airport
 
-from project.core.config import settings
+from project.core.exceptions import AirportNotFound
 
 
 class AirportRepository:
     _collection: Type[Airport] = Airport
 
-    async def check_connection(self, session: AsyncSession) -> bool:
-        query = "SELECT 1;"
-        result = await session.scalar(text(query))
-        return True if result else False
+    async def check_connection(
+            self,
+            session: AsyncSession,
+    ) -> bool:
+        query = select(true())
 
-    async def create_airport(
-        self,
-        session: AsyncSession,
-        airport: AirportSchema,
-    ) -> AirportSchema:
-        columns = ", ".join(airport.model_dump().keys())
-        values_placeholders = ", ".join(f":{key}" for key in airport.model_dump().keys())
-        query = f"""
-            INSERT INTO {settings.POSTGRES_SCHEMA}.airports ({columns})
-            VALUES ({values_placeholders})
-            RETURNING *;
-        """
-
-        result = await session.execute(text(query), airport.model_dump())
-        await session.commit()
-
-        new_airport = result.mappings().first()
-        return AirportSchema.model_validate(obj=new_airport)
+        try:
+            return await session.scalar(query)
+        except (Exception, InterfaceError):
+            return False
 
     async def get_airport_by_id(
-        self,
-        session: AsyncSession,
-        id: int,
+            self,
+            session: AsyncSession,
+            airport_id: int,
     ) -> AirportSchema:
-        query = f"""
-            SELECT * FROM {settings.POSTGRES_SCHEMA}.airports
-            WHERE id = :id;
-        """
+        query = (
+            select(self._collection)
+            .where(self._collection.airport_id == airport_id)
+        )
 
-        result = await session.execute(text(query), {'id': id})
-        airport = result.mappings().first()
+        airport = await session.scalar(query)
 
-        return AirportSchema.model_validate(obj=airport) if airport else None
+        if not airport:
+            raise AirportNotFound(_id=airport_id)
+
+        return AirportSchema.model_validate(obj=airport)
+
+    async def get_all_airports(
+            self,
+            session: AsyncSession,
+    ) -> list[AirportSchema]:
+        query = select(self._collection)
+
+        airports = await session.scalars(query)
+
+        return [AirportSchema.model_validate(obj=airport) for airport in airports.all()]
+
+    async def create_airport(
+            self,
+            session: AsyncSession,
+            airport: AirportCreateUpdateSchema,
+    ) -> AirportSchema:
+        query = (
+            insert(self._collection)
+            .values(airport.model_dump())
+            .returning(self._collection)
+        )
+
+        created_airport = await session.scalar(query)
+        await session.flush()
+
+        return AirportSchema.model_validate(obj=created_airport)
 
     async def update_airport(
-        self,
-        session: AsyncSession,
-        id: int,
-        airport: AirportSchema,
+            self,
+            session: AsyncSession,
+            airport_id: int,
+            airport: AirportCreateUpdateSchema,
     ) -> AirportSchema:
-        set_clause = ", ".join(f"{key} = :{key}" for key in airport.model_dump().keys())
-        query = f"""
-            UPDATE {settings.POSTGRES_SCHEMA}.airports
-            SET {set_clause}
-            WHERE id = :id
-            RETURNING *;
-        """
+        query = (
+            update(self._collection)
+            .where(self._collection.airport_id == airport_id)
+            .values(airport.model_dump())
+            .returning(self._collection)
+        )
 
-        params = airport.model_dump()
-        params['id'] = id
+        updated_airport = await session.scalar(query)
 
-        result = await session.execute(text(query), params)
-        await session.commit()
+        if not updated_airport:
+            raise AirportNotFound(_id=airport_id)
 
-        updated_airport = result.mappings().first()
-        return AirportSchema.model_validate(obj=updated_airport) if updated_airport else None
+        return AirportSchema.model_validate(obj=updated_airport)
 
     async def delete_airport(
-        self,
-        session: AsyncSession,
-        id: int,
-    ) -> dict:
-        query = f"""
-            DELETE FROM {settings.POSTGRES_SCHEMA}.airports
-            WHERE id = :id;
-        """
+            self,
+            session: AsyncSession,
+            airport_id: int
+    ) -> None:
+        query = delete(self._collection).where(self._collection.airport_id == airport_id)
 
-        await session.execute(text(query), {'id': id})
-        await session.commit()
+        result = await session.execute(query)
 
-        return {'status': 'success', 'message': 'Airport deleted successfully'}
+        if not result.rowcount:
+            raise AirportNotFound(_id=airport_id)

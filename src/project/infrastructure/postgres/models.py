@@ -1,200 +1,162 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, Integer, String, Float, DateTime, Time
-from src.project.infrastructure.postgres.database import Base
+from datetime import datetime
+
+from sqlalchemy import (
+    String, ForeignKey, false
+)
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+
+
+from project.infrastructure.postgres.database import Base
+
+
+
 
 class City(Base):
-    tablename = "city"
+    __tablename__ = "cities"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(nullable=False)
-    country: Mapped[str] = mapped_column(nullable=False)
+    city_id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String)
+    country: Mapped[str] = mapped_column(String)
 
-    airports = relationship("Airport", back_populates="city")
+    airports: Mapped[list["Airport"]] = relationship("Airport", back_populates="city")
 
 
 class AircraftModel(Base):
-    tablename = "AircraftModel"
+    __tablename__ = "AircraftModel"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(nullable=False)
-    capacity: Mapped[int] = mapped_column(nullable=False)
-    max_range: Mapped[int] = mapped_column(nullable=False)
+    aircraft_model_id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String)
+    capacity: Mapped[int] = mapped_column()
+    max_range: Mapped[int] = mapped_column()
 
-    plane = relationship("Plane", back_populates="aircraft_model")
-
+    planes: Mapped[list["Plane"]] = relationship("Plane", back_populates="aircraft_model")
 
 
 class Airline(Base):
-    tablename = "Airline"
+    __tablename__ = "Airline"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(nullable=False)
-    rating: Mapped[float] = mapped_column(nullable=False)
+    airline_id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String)
+    rating: Mapped[float] = mapped_column()
 
-    plane = relationship("Plane", back_populates="airline")
-    staff = relationship("Staff", back_populates="airline")
-    flights = relationship("Flight", back_populates="airline")
+    planes: Mapped[list["Plane"]] = relationship("Plane", back_populates="airline")
+    staff: Mapped[list["Staff"]] = relationship("Staff", back_populates="airline")
+    flights: Mapped[list["Flight"]] = relationship("Flight", back_populates="airline")
 
 
 class Customer(Base):
-    tablename = "Customer"
+    __tablename__ = "Customers"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    first_name: Mapped[str] = mapped_column(nullable=False)
-    second_name: Mapped[str] = mapped_column(nullable=False)
-    age: Mapped[int] = mapped_column(nullable=False)
+    customer_id: Mapped[int] = mapped_column(primary_key=True)
+    first_name: Mapped[str] = mapped_column(String)
+    second_name: Mapped[str] = mapped_column(String)
+    age: Mapped[int] = mapped_column()
+    email: Mapped[str] = mapped_column(nullable=False, unique=True)
+    password: Mapped[str] = mapped_column(nullable=False)
+    is_admin: Mapped[bool] = mapped_column(default=False, server_default=false())
 
-    discounts = relationship("Discount", back_populates="customer")
-    tickets = relationship("Ticket", back_populates="customer")
-
+    discounts: Mapped[list["Discount"]] = relationship("Discount", back_populates="customer")
+    tickets: Mapped[list["Ticket"]] = relationship("Ticket", back_populates="customer")
 
 
 class Plane(Base):
-    tablename = "Plane"
+    __tablename__ = "Plane"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    id_airline: Mapped[int] = mapped_column(ForeignKey("Airline.id"), nullable=False)
-    year_of_release: Mapped[int] = mapped_column(nullable=False)
-    id_aircraft_model: Mapped[int] = mapped_column(ForeignKey("AircraftModel.id"), nullable=False)
+    plane_id: Mapped[int] = mapped_column(primary_key=True)
+    airline_id: Mapped[int] = mapped_column(ForeignKey("Airline.airline_id"))
+    year_of_release: Mapped[int] = mapped_column()
+    aircraft_model_id: Mapped[int] = mapped_column(ForeignKey("AircraftModel.aircraft_model_id"))
 
-    airline = relationship("Airline", back_populates="plane")
-    aircraft_model = relationship("AircraftModel", back_populates="plane")
-    flights = relationship("Flight", back_populates="plane")
+    airline: Mapped["Airline"] = relationship("Airline", back_populates="planes")
+    aircraft_model: Mapped["AircraftModel"] = relationship("AircraftModel", back_populates="planes")
+    flights: Mapped[list["Flight"]] = relationship("Flight", back_populates="plane")
 
 
 class Discount(Base):
-    tablename = "Discount"
+    __tablename__ = "Discount"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    id_customer: Mapped[int] = mapped_column(ForeignKey("customer.id"), nullable=False)
-    discount_percent: Mapped[int] = mapped_column(nullable=False)
+    discount_id: Mapped[int] = mapped_column(primary_key=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("Customers.customer_id"))
+    discount_percent: Mapped[int] = mapped_column()
 
-    customer = relationship("Customer", back_populates="discounts")
+    customer: Mapped["Customer"] = relationship("Customer", back_populates="discounts")
 
 
 class Airport(Base):
-    tablename = "Airport"
+    __tablename__ = "Airport"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    id_city: Mapped[int] = mapped_column(ForeignKey("city.id"), nullable=False)
-    airport_code: Mapped[str] = mapped_column(nullable=False)
+    airport_id: Mapped[int] = mapped_column(primary_key=True)
+    city_id: Mapped[int] = mapped_column(ForeignKey("cities.city_id"))
+    airport_code: Mapped[str] = mapped_column(String)
 
-    city = relationship("City", back_populates="airports")
+    city: Mapped["City"] = relationship("City", back_populates="airports")
+    routes: Mapped[list["Route"]] = relationship("Route", back_populates="departure_airport")
+    arrival_routes: Mapped[list["Route"]] = relationship("Route", back_populates="arrival_airport")
 
-    departures = relationship(
-        "Route",
-        back_populates="departure_airport",
-        foreign_keys="Route.id_departure_airport"
-    )
-    arrivals = relationship(
-        "Route",
-        back_populates="arrival_airport",
-        foreign_keys="Route.id_arrival_airport"
-    )
 
 class Staff(Base):
-    tablename = "Staff"
+    __tablename__ = "Staff"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    first_name: Mapped[str] = mapped_column(nullable=False)
-    second_name: Mapped[str] = mapped_column(nullable=False)
-    id_airline: Mapped[int] = mapped_column(ForeignKey("Airline.id"), nullable=False)
-    experience: Mapped[int] = mapped_column(nullable=False)
+    staff_id: Mapped[int] = mapped_column(primary_key=True)
+    first_name: Mapped[str] = mapped_column(String)
+    second_name: Mapped[str] = mapped_column(String)
+    airline_id: Mapped[int] = mapped_column(ForeignKey("Airline.airline_id"))
+    experience: Mapped[int] = mapped_column()
 
-    airline = relationship("Airline", back_populates="staff")
-
-    crews_as_pilot1 = relationship(
-        "Crew",
-        back_populates="pilot1",
-        foreign_keys="Crew.id_pilot1"
-    )
-    crews_as_pilot2 = relationship(
-        "Crew",
-        back_populates="pilot2",
-        foreign_keys="Crew.id_pilot2"
-    )
-    crews_as_stewardess = relationship(
-        "Crew",
-        back_populates="stewardess",
-        foreign_keys="Crew.id_stewardess"
-    )
+    airline: Mapped["Airline"] = relationship("Airline", back_populates="staff")
+    crew: Mapped[list["Crew"]] = relationship("Crew", back_populates="pilot1_id")
 
 
 class Crew(Base):
-    tablename = "Crew"
+    __tablename__ = "Crew"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    id_pilot1: Mapped[int] = mapped_column(ForeignKey("Staff.id"), nullable=False)
-    id_pilot2: Mapped[int] = mapped_column(ForeignKey("Staff.id"), nullable=False)
-    id_stewardess: Mapped[int] = mapped_column(ForeignKey("Staff.id"), nullable=False)
-
-    pilot1 = relationship(
-        "Staff",
-        back_populates="crews_as_pilot1",
-        foreign_keys=[id_pilot1]
-    )
-    pilot2 = relationship(
-        "Staff",
-        back_populates="crews_as_pilot2",
-        foreign_keys=[id_pilot2]
-    )
-    stewardess = relationship(
-        "Staff",
-        back_populates="crews_as_stewardess",
-        foreign_keys=[id_stewardess]
-    )
-
-    flights = relationship("Flight", back_populates="crew")
+    crew_id: Mapped[int] = mapped_column(primary_key=True)
+    pilot1_id: Mapped[int] = mapped_column(ForeignKey("Staff.employee_id"))
+    pilot2_id: Mapped[int] = mapped_column(ForeignKey("Staff.employee_id"))
+    stewardess: Mapped[int] = mapped_column(ForeignKey("Staff.employee_id"))
+    flights: Mapped[list["Flight"]] = relationship("Flight", back_populates="crew")
 
 
 class Route(Base):
-    tablename = "Route"
+    __tablename__ = "Routes"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    id_departure_airport: Mapped[int] = mapped_column(ForeignKey("Airport.id"), nullable=False)
-    id_arrival_airport: Mapped[int] = mapped_column(ForeignKey("Airport.id"), nullable=False)
-    distance: Mapped[float] = mapped_column(nullable=False)
-    flight_time: Mapped[Time] = mapped_column(nullable=False)
+    route_id: Mapped[int] = mapped_column(primary_key=True)
+    departure_airport_id: Mapped[int] = mapped_column(ForeignKey("Airport.airport_id"))
+    arrival_airport_id: Mapped[int] = mapped_column(ForeignKey("Airport.airport_id"))
+    distance: Mapped[float] = mapped_column()
 
-    departure_airport = relationship(
-        "Airport",
-        back_populates="departures",
-        foreign_keys=[id_departure_airport]
-    )
-    arrival_airport = relationship(
-        "Airport",
-        back_populates="arrivals",
-        foreign_keys=[id_arrival_airport]
-    )
+    departure_airport: Mapped["Airport"] = relationship("Airport", foreign_keys=[departure_airport_id],
+                                                        back_populates="routes")
+    arrival_airport: Mapped["Airport"] = relationship("Airport", foreign_keys=[arrival_airport_id],
+                                                      back_populates="arrival_routes")
+    flights: Mapped[list["Flight"]] = relationship("Flight", back_populates="route")
 
-    flights = relationship("Flight", back_populates="route")
 
 class Flight(Base):
-    tablename = "Flights"
+    __tablename__ = "Flights"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    id_route: Mapped[int] = mapped_column(ForeignKey("route.id"), nullable=False)
-    id_plane: Mapped[int] = mapped_column(ForeignKey("Plane.id"), nullable=False)
-    id_crew: Mapped[int] = mapped_column(ForeignKey("Crew.id"), nullable=False)
-    id_airline: Mapped[int] = mapped_column(ForeignKey("Airline.id"), nullable=False)
-    departure_time: Mapped[DateTime] = mapped_column(nullable=False)
-    arrival_time: Mapped[DateTime] = mapped_column(nullable=False)
+    flight_id: Mapped[int] = mapped_column(primary_key=True)
+    route_id: Mapped[int] = mapped_column(ForeignKey("Routes.route_id"))
+    plane_id: Mapped[int] = mapped_column(ForeignKey("Plane.plane_id"))
+    crew_id: Mapped[int] = mapped_column(ForeignKey("Crew.crew_id"))
+    airline_id: Mapped[int] = mapped_column(ForeignKey("Airline.airline_id"))
+    departure_time: Mapped[datetime] = mapped_column()
+    arrival_time: Mapped[datetime] = mapped_column()
 
-    route = relationship("Route", back_populates="flights")
-    plane = relationship("Plane", back_populates="flights")
-    crew = relationship("Crew", back_populates="flights")
-    airline = relationship("Airline", back_populates="flights")
+    route: Mapped["Route"] = relationship("Route", back_populates="flights")
+    plane: Mapped["Plane"] = relationship("Plane", back_populates="flights")
+    crew: Mapped["Crew"] = relationship("Crew", back_populates="flights")
+    airline: Mapped["Airline"] = relationship("Airline", back_populates="flights")
 
-    tickets = relationship("Ticket", back_populates="flight")
 
 class Ticket(Base):
-    tablename = "Tickets"
+    __tablename__ = "Tickets"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    id_customer: Mapped[int] = mapped_column(ForeignKey("customer.id"), nullable=False)
-    date_of_purchase: Mapped[DateTime] = mapped_column(nullable=False)
-    price: Mapped[float] = mapped_column(nullable=False)
-    id_flight: Mapped[int] = mapped_column(ForeignKey("Flights.id"), nullable=False)
+    ticket_id: Mapped[int] = mapped_column(primary_key=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("Customers.customer_id"))
+    date_of_purchase: Mapped[datetime] = mapped_column()
+    price: Mapped[float] = mapped_column()
+    flight_id: Mapped[int] = mapped_column(ForeignKey("Flights.flight_id"))
 
-    customer = relationship("Customer", back_populates="tickets")
-    flight = relationship("Flight", back_populates="tickets")
+    customer: Mapped["Customer"] = relationship("Customer", back_populates="tickets")
+    flight: Mapped["Flight"] = relationship("Flight", back_populates="tickets")

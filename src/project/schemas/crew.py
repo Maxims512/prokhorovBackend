@@ -1,9 +1,13 @@
 from pydantic import BaseModel, ConfigDict
 
-class CrewSchema(BaseModel):
+
+class CrewCreateUpdateSchema(BaseModel):
+    pilot1_id: int
+    pilot2_id: int
+    stewardess_id: int
+
+
+class CrewSchema(CrewCreateUpdateSchema):
     model_config = ConfigDict(from_attributes=True)
 
     crew_id: int
-    pilot1_id: int  # Reference to 'Staff.employee_id'
-    pilot2_id: int  # Reference to 'Staff.employee_id'
-    stewardess_id: int  # Reference to 'Staff.employee_id'

@@ -1,91 +1,100 @@
-
 from typing import Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import select, insert, update, delete, true
+from sqlalchemy.exc import InterfaceError
 
-from project.schemas.flight import FlightSchema
+from project.schemas.flight import FlightSchema, FlightCreateUpdateSchema
 from project.infrastructure.postgres.models import Flight
 
-from project.core.config import settings
+from project.core.exceptions import FlightNotFound
 
 
 class FlightRepository:
     _collection: Type[Flight] = Flight
 
-    async def check_connection(self, session: AsyncSession) -> bool:
-        query = "SELECT 1;"
-        result = await session.scalar(text(query))
-        return True if result else False
+    async def check_connection(
+            self,
+            session: AsyncSession,
+    ) -> bool:
+        query = select(true())
 
-    async def create_flight(
-        self,
-        session: AsyncSession,
-        flight: FlightSchema,
-    ) -> FlightSchema:
-        columns = ", ".join(flight.model_dump().keys())
-        values_placeholders = ", ".join(f":{key}" for key in flight.model_dump().keys())
-        query = f"""
-            INSERT INTO {settings.POSTGRES_SCHEMA}.flights ({columns})
-            VALUES ({values_placeholders})
-            RETURNING *;
-        """
-
-        result = await session.execute(text(query), flight.model_dump())
-        await session.commit()
-
-        new_flight = result.mappings().first()
-        return FlightSchema.model_validate(obj=new_flight)
+        try:
+            return await session.scalar(query)
+        except (Exception, InterfaceError):
+            return False
 
     async def get_flight_by_id(
-        self,
-        session: AsyncSession,
-        id: int,
+            self,
+            session: AsyncSession,
+            flight_id: int,
     ) -> FlightSchema:
-        query = f"""
-            SELECT * FROM {settings.POSTGRES_SCHEMA}.flights
-            WHERE id = :id;
-        """
+        query = (
+            select(self._collection)
+            .where(self._collection.flight_id == flight_id)
+        )
 
-        result = await session.execute(text(query), {'id': id})
-        flight = result.mappings().first()
+        flight = await session.scalar(query)
 
-        return FlightSchema.model_validate(obj=flight) if flight else None
+        if not flight:
+            raise FlightNotFound(_id=flight_id)
+
+        return FlightSchema.model_validate(obj=flight)
+
+    async def get_all_flights(
+            self,
+            session: AsyncSession,
+    ) -> list[FlightSchema]:
+        query = select(self._collection)
+
+        cities = await session.scalars(query)
+
+        return [FlightSchema.model_validate(obj=flight) for flight in cities.all()]
+
+    async def create_flight(
+            self,
+            session: AsyncSession,
+            flight: FlightCreateUpdateSchema,
+    ) -> FlightSchema:
+        query = (
+            insert(self._collection)
+            .values(flight.model_dump())
+            .returning(self._collection)
+        )
+
+        created_flight = await session.scalar(query)
+        await session.flush()
+
+        return FlightSchema.model_validate(obj=created_flight)
 
     async def update_flight(
-        self,
-        session: AsyncSession,
-        id: int,
-        flight: FlightSchema,
+            self,
+            session: AsyncSession,
+            flight_id: int,
+            flight: FlightCreateUpdateSchema,
     ) -> FlightSchema:
-        set_clause = ", ".join(f"{key} = :{key}" for key in flight.model_dump().keys())
-        query = f"""
-            UPDATE {settings.POSTGRES_SCHEMA}.flights
-            SET {set_clause}
-            WHERE id = :id
-            RETURNING *;
-        """
+        query = (
+            update(self._collection)
+            .where(self._collection.flight_id == flight_id)
+            .values(flight.model_dump())
+            .returning(self._collection)
+        )
 
-        params = flight.model_dump()
-        params['id'] = id
+        updated_flight = await session.scalar(query)
 
-        result = await session.execute(text(query), params)
-        await session.commit()
+        if not updated_flight:
+            raise FlightNotFound(_id=flight_id)
 
-        updated_flight = result.mappings().first()
-        return FlightSchema.model_validate(obj=updated_flight) if updated_flight else None
+        return FlightSchema.model_validate(obj=updated_flight)
 
     async def delete_flight(
-        self,
-        session: AsyncSession,
-        id: int,
-    ) -> dict:
-        query = f"""
-            DELETE FROM {settings.POSTGRES_SCHEMA}.flights
-            WHERE id = :id;
-        """
+            self,
+            session: AsyncSession,
+            flight_id: int
+    ) -> None:
+        query = delete(self._collection).where(self._collection.flight_id == flight_id)
 
-        await session.execute(text(query), {'id': id})
-        await session.commit()
+        result = await session.execute(query)
 
-        return {'status': 'success', 'message': 'Flight deleted successfully'}
+        if not result.rowcount:
+            raise FlightNotFound(_id=flight_id)

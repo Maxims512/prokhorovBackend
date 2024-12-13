@@ -1,91 +1,100 @@
-
 from typing import Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import select, insert, update, delete, true
+from sqlalchemy.exc import InterfaceError
 
-from project.schemas.ticket import TicketSchema
+from project.schemas.ticket import TicketSchema, TicketCreateUpdateSchema
 from project.infrastructure.postgres.models import Ticket
 
-from project.core.config import settings
+from project.core.exceptions import TicketNotFound
 
 
 class TicketRepository:
     _collection: Type[Ticket] = Ticket
 
-    async def check_connection(self, session: AsyncSession) -> bool:
-        query = "SELECT 1;"
-        result = await session.scalar(text(query))
-        return True if result else False
+    async def check_connection(
+            self,
+            session: AsyncSession,
+    ) -> bool:
+        query = select(true())
+
+        try:
+            return await session.scalar(query)
+        except (Exception, InterfaceError):
+            return False
+
+    async def get_ticket_by_id(
+            self,
+            session: AsyncSession,
+            ticket_id: int,
+    ) -> TicketSchema:
+        query = (
+            select(self._collection)
+            .where(self._collection.ticket_id == ticket_id)
+        )
+
+        ticket = await session.scalar(query)
+
+        if not ticket:
+            raise TicketNotFound(_id=ticket_id)
+
+        return TicketSchema.model_validate(obj=ticket)
+
+    async def get_all_tickets(
+            self,
+            session: AsyncSession,
+    ) -> list[TicketSchema]:
+        query = select(self._collection)
+
+        cities = await session.scalars(query)
+
+        return [TicketSchema.model_validate(obj=ticket) for ticket in cities.all()]
 
     async def create_ticket(
-        self,
-        session: AsyncSession,
-        ticket: TicketSchema,
+            self,
+            session: AsyncSession,
+            ticket: TicketCreateUpdateSchema,
     ) -> TicketSchema:
-        columns = ", ".join(ticket.model_dump().keys())
-        values_placeholders = ", ".join(f":{key}" for key in ticket.model_dump().keys())
-        query = f"""
-            INSERT INTO {settings.POSTGRES_SCHEMA}.tickets ({columns})
-            VALUES ({values_placeholders})
-            RETURNING *;
-        """
+        query = (
+            insert(self._collection)
+            .values(ticket.model_dump())
+            .returning(self._collection)
+        )
 
-        result = await session.execute(text(query), ticket.model_dump())
-        await session.commit()
+        created_ticket = await session.scalar(query)
+        await session.flush()
 
-        new_ticket = result.mappings().first()
-        return TicketSchema.model_validate(obj=new_ticket)
-
-    async def get_ticket(
-        self,
-        session: AsyncSession,
-        id: int,
-    ) -> TicketSchema:
-        query = f"""
-            SELECT * FROM {settings.POSTGRES_SCHEMA}.tickets
-            WHERE id = :id;
-        """
-
-        result = await session.execute(text(query), {'id': id})
-        ticket = result.mappings().first()
-
-        return TicketSchema.model_validate(obj=ticket) if ticket else None
+        return TicketSchema.model_validate(obj=created_ticket)
 
     async def update_ticket(
-        self,
-        session: AsyncSession,
-        id: int,
-        ticket: TicketSchema,
+            self,
+            session: AsyncSession,
+            ticket_id: int,
+            ticket: TicketCreateUpdateSchema,
     ) -> TicketSchema:
-        set_clause = ", ".join(f"{key} = :{key}" for key in ticket.model_dump().keys())
-        query = f"""
-            UPDATE {settings.POSTGRES_SCHEMA}.tickets
-            SET {set_clause}
-            WHERE id = :id
-            RETURNING *;
-        """
+        query = (
+            update(self._collection)
+            .where(self._collection.ticket_id == ticket_id)
+            .values(ticket.model_dump())
+            .returning(self._collection)
+        )
 
-        params = ticket.model_dump()
-        params['id'] = id
+        updated_ticket = await session.scalar(query)
 
-        result = await session.execute(text(query), params)
-        await session.commit()
+        if not updated_ticket:
+            raise TicketNotFound(_id=ticket_id)
 
-        updated_ticket = result.mappings().first()
-        return TicketSchema.model_validate(obj=updated_ticket) if updated_ticket else None
+        return TicketSchema.model_validate(obj=updated_ticket)
 
     async def delete_ticket(
-        self,
-        session: AsyncSession,
-        id: int,
-    ) -> bool:
-        query = f"""
-            DELETE FROM {settings.POSTGRES_SCHEMA}.tickets
-            WHERE id = :id;
-        """
+            self,
+            session: AsyncSession,
+            ticket_id: int
+    ) -> None:
+        query = delete(self._collection).where(self._collection.ticket_id == ticket_id)
 
-        await session.execute(text(query), {'id': id})
-        await session.commit()
+        result = await session.execute(query)
 
-        return True
+        if not result.rowcount:
+            raise TicketNotFound(_id=ticket_id)

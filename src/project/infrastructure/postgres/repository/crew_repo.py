@@ -1,91 +1,100 @@
-
 from typing import Type
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import select, insert, update, delete, true
+from sqlalchemy.exc import InterfaceError
 
-from project.schemas.crew import CrewSchema
+from project.schemas.crew import CrewSchema, CrewCreateUpdateSchema
 from project.infrastructure.postgres.models import Crew
 
-from project.core.config import settings
+from project.core.exceptions import CrewNotFound
 
 
 class CrewRepository:
     _collection: Type[Crew] = Crew
 
-    async def check_connection(self, session: AsyncSession) -> bool:
-        query = "SELECT 1;"
-        result = await session.scalar(text(query))
-        return True if result else False
+    async def check_connection(
+            self,
+            session: AsyncSession,
+    ) -> bool:
+        query = select(true())
 
-    async def create_crew(
-        self,
-        session: AsyncSession,
-        crew: CrewSchema,
-    ) -> CrewSchema:
-        columns = ", ".join(crew.model_dump().keys())
-        values_placeholders = ", ".join(f":{key}" for key in crew.model_dump().keys())
-        query = f"""
-            INSERT INTO {settings.POSTGRES_SCHEMA}.crew ({columns})
-            VALUES ({values_placeholders})
-            RETURNING *;
-        """
-
-        result = await session.execute(text(query), crew.model_dump())
-        await session.commit()
-
-        new_crew = result.mappings().first()
-        return CrewSchema.model_validate(obj=new_crew)
+        try:
+            return await session.scalar(query)
+        except (Exception, InterfaceError):
+            return False
 
     async def get_crew_by_id(
-        self,
-        session: AsyncSession,
-        id: int,
+            self,
+            session: AsyncSession,
+            crew_id: int,
     ) -> CrewSchema:
-        query = f"""
-            SELECT * FROM {settings.POSTGRES_SCHEMA}.crew
-            WHERE id = :id;
-        """
+        query = (
+            select(self._collection)
+            .where(self._collection.crew_id == crew_id)
+        )
 
-        result = await session.execute(text(query), {'id': id})
-        crew = result.mappings().first()
+        crew = await session.scalar(query)
 
-        return CrewSchema.model_validate(obj=crew) if crew else None
+        if not crew:
+            raise CrewNotFound(_id=crew_id)
+
+        return CrewSchema.model_validate(obj=crew)
+
+    async def get_all_crews(
+            self,
+            session: AsyncSession,
+    ) -> list[CrewSchema]:
+        query = select(self._collection)
+
+        cities = await session.scalars(query)
+
+        return [CrewSchema.model_validate(obj=crew) for crew in cities.all()]
+
+    async def create_crew(
+            self,
+            session: AsyncSession,
+            crew: CrewCreateUpdateSchema,
+    ) -> CrewSchema:
+        query = (
+            insert(self._collection)
+            .values(crew.model_dump())
+            .returning(self._collection)
+        )
+
+        created_crew = await session.scalar(query)
+        await session.flush()
+
+        return CrewSchema.model_validate(obj=created_crew)
 
     async def update_crew(
-        self,
-        session: AsyncSession,
-        id: int,
-        crew: CrewSchema,
+            self,
+            session: AsyncSession,
+            crew_id: int,
+            crew: CrewCreateUpdateSchema,
     ) -> CrewSchema:
-        set_clause = ", ".join(f"{key} = :{key}" for key in crew.model_dump().keys())
-        query = f"""
-            UPDATE {settings.POSTGRES_SCHEMA}.crew
-            SET {set_clause}
-            WHERE id = :id
-            RETURNING *;
-        """
+        query = (
+            update(self._collection)
+            .where(self._collection.crew_id == crew_id)
+            .values(crew.model_dump())
+            .returning(self._collection)
+        )
 
-        params = crew.model_dump()
-        params['id'] = id
+        updated_crew = await session.scalar(query)
 
-        result = await session.execute(text(query), params)
-        await session.commit()
+        if not updated_crew:
+            raise CrewNotFound(_id=crew_id)
 
-        updated_crew = result.mappings().first()
-        return CrewSchema.model_validate(obj=updated_crew) if updated_crew else None
+        return CrewSchema.model_validate(obj=updated_crew)
 
     async def delete_crew(
-        self,
-        session: AsyncSession,
-        id: int,
-    ) -> dict:
-        query = f"""
-            DELETE FROM {settings.POSTGRES_SCHEMA}.crew
-            WHERE id = :id;
-        """
+            self,
+            session: AsyncSession,
+            crew_id: int
+    ) -> None:
+        query = delete(self._collection).where(self._collection.crew_id == crew_id)
 
-        await session.execute(text(query), {'id': id})
-        await session.commit()
+        result = await session.execute(query)
 
-        return {'status': 'success', 'message': 'Crew deleted successfully'}
+        if not result.rowcount:
+            raise CrewNotFound(_id=crew_id)
